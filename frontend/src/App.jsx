@@ -6,7 +6,11 @@ import AppLayout from "./layouts/AppLayout";
 import RequireAuth from "./auth/RequireAuth";
 import RequirePermission from "./auth/RequirePermission";
 import AcilisFisiOlustur from "./pages/AcilisFisiOlustur";
+import JournalWorkbenchPage from "./pages/JournalWorkbenchPage";
+import CompanyOnboardingPage from "./pages/settings/CompanyOnboardingPage";
+import GlSetupPage from "./pages/settings/GlSetupPage";
 import HesapPlaniOlustur from "./pages/settings/HesapPlaniOlustur";
+import OrganizationManagementPage from "./pages/settings/OrganizationManagementPage";
 import RolesPermissionsPage from "./pages/security/RolesPermissionsPage";
 import UserAssignmentsPage from "./pages/security/UserAssignmentsPage";
 import ScopeAssignmentsPage from "./pages/security/ScopeAssignmentsPage";
@@ -24,9 +28,29 @@ const implementedRoutes = [
     element: <AcilisFisiOlustur />,
   },
   {
+    appPath: "/app/mahsup-islemleri",
+    childPath: "mahsup-islemleri",
+    element: <JournalWorkbenchPage />,
+  },
+  {
     appPath: "/app/ayarlar/hesap-plani-olustur",
     childPath: "ayarlar/hesap-plani-olustur",
     element: <HesapPlaniOlustur />,
+  },
+  {
+    appPath: "/app/ayarlar/hesap-plani-ayarlari",
+    childPath: "ayarlar/hesap-plani-ayarlari",
+    element: <GlSetupPage />,
+  },
+  {
+    appPath: "/app/ayarlar/sirket-ayarlari",
+    childPath: "ayarlar/sirket-ayarlari",
+    element: <CompanyOnboardingPage />,
+  },
+  {
+    appPath: "/app/ayarlar/organizasyon-yonetimi",
+    childPath: "ayarlar/organizasyon-yonetimi",
+    element: <OrganizationManagementPage />,
   },
   {
     appPath: "/app/ayarlar/rbac/roles-permissions",

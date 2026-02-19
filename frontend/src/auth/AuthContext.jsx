@@ -53,7 +53,7 @@ export function AuthProvider({ children }) {
     });
   }, [clearAuthState]);
 
-  async function login(email, password) {
+  const login = useCallback(async (email, password) => {
     const res = await api.post("/auth/login", { email, password });
     const newToken = res.data?.token;
 
@@ -70,11 +70,11 @@ export function AuthProvider({ children }) {
     } catch {
       // /me lookup failed, but login itself succeeded.
     }
-  }
+  }, [applyMePayload]);
 
-  function logout() {
+  const logout = useCallback(() => {
     clearAuthState();
-  }
+  }, [clearAuthState]);
 
   const permissionSet = useMemo(() => new Set(permissions), [permissions]);
 
@@ -132,6 +132,8 @@ export function AuthProvider({ children }) {
       permissions,
       isAuthed,
       booting,
+      login,
+      logout,
       hasPermission,
       hasAnyPermission,
       hasAllPermissions,

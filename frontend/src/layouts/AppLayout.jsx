@@ -169,8 +169,8 @@ function mainLinkClass({ isActive }, collapsed) {
 
 function subLinkClass({ isActive }) {
   return `block rounded-md border-l px-3 py-1.5 text-sm transition-colors ${isActive
-      ? "border-cyan-300 text-cyan-100"
-      : "border-slate-700 text-slate-400 hover:text-slate-100"
+    ? "border-cyan-300 text-cyan-100"
+    : "border-slate-700 text-slate-400 hover:text-slate-100"
     }`;
 }
 
@@ -381,8 +381,8 @@ export default function AppLayout() {
                 >
                   <span
                     className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${collapsed
-                        ? "bg-white/10 text-slate-100"
-                        : "bg-white/10 text-slate-200 group-hover:bg-white/20"
+                      ? "bg-white/10 text-slate-100"
+                      : "bg-white/10 text-slate-200 group-hover:bg-white/20"
                       }`}
                   >
                     <Icon name={item.icon} className="h-4 w-4" />
@@ -494,7 +494,7 @@ export default function AppLayout() {
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 p-4 md:p-6">
+        <div className="flex-1 min-h-0 p-4 md:p-6 overflow-auto">
           <Outlet />
         </div>
 

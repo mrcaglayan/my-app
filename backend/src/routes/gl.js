@@ -120,7 +120,9 @@ async function loadJournal(tenantId, journalId) {
   const result = await query(
     `SELECT id, tenant_id, legal_entity_id, book_id, fiscal_period_id, journal_no, source_type, status,
             entry_date, document_date, currency_code, description, reference_no,
-            total_debit_base, total_credit_base, reversal_journal_entry_id
+            total_debit_base, total_credit_base, created_by_user_id, posted_by_user_id,
+            posted_at, reversed_by_user_id, reversed_at, reverse_reason,
+            reversal_journal_entry_id, created_at, updated_at
      FROM journal_entries
      WHERE id = ?
        AND tenant_id = ?
@@ -128,6 +130,106 @@ async function loadJournal(tenantId, journalId) {
     [journalId, tenantId]
   );
   return result.rows[0] || null;
+}
+
+function parseOptionalPositiveInt(value, fieldLabel) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const parsed = parsePositiveInt(value);
+  if (!parsed) {
+    throw badRequest(`${fieldLabel} must be a positive integer`);
+  }
+  return parsed;
+}
+
+async function validateJournalLineScope(req, tenantId, legalEntityId, line, index) {
+  const lineLabel = `lines[${index}]`;
+  const accountId = parsePositiveInt(line?.accountId);
+  if (!accountId) {
+    throw badRequest(`${lineLabel}.accountId must be a positive integer`);
+  }
+
+  const accountResult = await query(
+    `SELECT a.id, c.legal_entity_id
+     FROM accounts a
+     JOIN charts_of_accounts c ON c.id = a.coa_id
+     WHERE a.id = ?
+       AND c.tenant_id = ?
+     LIMIT 1`,
+    [accountId, tenantId]
+  );
+  const account = accountResult.rows[0];
+  if (!account) {
+    throw badRequest(`${lineLabel}.accountId not found for tenant`);
+  }
+
+  const accountLegalEntityId = parsePositiveInt(account.legal_entity_id);
+  if (accountLegalEntityId && accountLegalEntityId !== legalEntityId) {
+    throw badRequest(`${lineLabel}.accountId does not belong to legalEntityId`);
+  }
+  if (accountLegalEntityId) {
+    assertScopeAccess(req, "legal_entity", accountLegalEntityId, `${lineLabel}.accountId`);
+  }
+
+  const operatingUnitId = parseOptionalPositiveInt(
+    line?.operatingUnitId,
+    `${lineLabel}.operatingUnitId`
+  );
+  if (operatingUnitId) {
+    const unitResult = await query(
+      `SELECT id, legal_entity_id
+       FROM operating_units
+       WHERE id = ?
+         AND tenant_id = ?
+       LIMIT 1`,
+      [operatingUnitId, tenantId]
+    );
+    const unit = unitResult.rows[0];
+    if (!unit) {
+      throw badRequest(`${lineLabel}.operatingUnitId not found for tenant`);
+    }
+    if (parsePositiveInt(unit.legal_entity_id) !== legalEntityId) {
+      throw badRequest(`${lineLabel}.operatingUnitId does not belong to legalEntityId`);
+    }
+    assertScopeAccess(req, "operating_unit", operatingUnitId, `${lineLabel}.operatingUnitId`);
+  }
+
+  const counterpartyLegalEntityId = parseOptionalPositiveInt(
+    line?.counterpartyLegalEntityId,
+    `${lineLabel}.counterpartyLegalEntityId`
+  );
+  if (counterpartyLegalEntityId) {
+    const counterpartyResult = await query(
+      `SELECT id
+       FROM legal_entities
+       WHERE id = ?
+         AND tenant_id = ?
+       LIMIT 1`,
+      [counterpartyLegalEntityId, tenantId]
+    );
+    if (!counterpartyResult.rows[0]) {
+      throw badRequest(`${lineLabel}.counterpartyLegalEntityId not found for tenant`);
+    }
+    assertScopeAccess(
+      req,
+      "legal_entity",
+      counterpartyLegalEntityId,
+      `${lineLabel}.counterpartyLegalEntityId`
+    );
+  }
+
+  const debitBase = toAmount(line?.debitBase);
+  const creditBase = toAmount(line?.creditBase);
+  if (debitBase < 0 || creditBase < 0) {
+    throw badRequest(`${lineLabel}.debitBase/creditBase cannot be negative`);
+  }
+  if ((debitBase === 0 && creditBase === 0) || (debitBase > 0 && creditBase > 0)) {
+    throw badRequest(
+      `${lineLabel} must have exactly one side > 0 (either debitBase or creditBase)`
+    );
+  }
 }
 
 router.get(
@@ -521,6 +623,231 @@ router.post(
     );
 
     return res.status(201).json({ ok: true, id: result.rows.insertId || null });
+  })
+);
+
+router.get(
+  "/journals",
+  requirePermission("gl.journal.read", {
+    resolveScope: async (req, tenantId) => {
+      const legalEntityId = parsePositiveInt(req.query?.legalEntityId);
+      if (legalEntityId) {
+        return { scopeType: "LEGAL_ENTITY", scopeId: legalEntityId };
+      }
+
+      const bookId = parsePositiveInt(req.query?.bookId);
+      if (bookId) {
+        return resolveScopeFromBookId(bookId, tenantId);
+      }
+
+      return null;
+    },
+  }),
+  asyncHandler(async (req, res) => {
+    const tenantId = resolveTenantId(req);
+    if (!tenantId) throw badRequest("tenantId is required");
+
+    const legalEntityId = parsePositiveInt(req.query.legalEntityId);
+    const bookId = parsePositiveInt(req.query.bookId);
+    const fiscalPeriodId = parsePositiveInt(req.query.fiscalPeriodId);
+    const status = req.query.status ? String(req.query.status).toUpperCase() : null;
+    const includeLines = String(req.query.includeLines || "").toLowerCase() === "true";
+
+    if (legalEntityId) {
+      assertScopeAccess(req, "legal_entity", legalEntityId, "legalEntityId");
+    }
+    if (status && !["DRAFT", "POSTED", "REVERSED"].includes(status)) {
+      throw badRequest("status must be one of DRAFT, POSTED, REVERSED");
+    }
+
+    const limitRaw = Number(req.query.limit);
+    const limit =
+      Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 200) : 50;
+    const offsetRaw = Number(req.query.offset);
+    const offset = Number.isInteger(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
+
+    const conditions = ["je.tenant_id = ?"];
+    const params = [tenantId];
+    conditions.push(buildScopeFilter(req, "legal_entity", "je.legal_entity_id", params));
+
+    if (legalEntityId) {
+      conditions.push("je.legal_entity_id = ?");
+      params.push(legalEntityId);
+    }
+    if (bookId) {
+      conditions.push("je.book_id = ?");
+      params.push(bookId);
+    }
+    if (fiscalPeriodId) {
+      conditions.push("je.fiscal_period_id = ?");
+      params.push(fiscalPeriodId);
+    }
+    if (status) {
+      conditions.push("je.status = ?");
+      params.push(status);
+    }
+
+    const whereSql = conditions.join(" AND ");
+    const countResult = await query(
+      `SELECT COUNT(*) AS total
+       FROM journal_entries je
+       WHERE ${whereSql}`,
+      params
+    );
+    const total = Number(countResult.rows[0]?.total || 0);
+
+    const rowsResult = await query(
+      `SELECT
+         je.id, je.tenant_id, je.legal_entity_id, je.book_id, je.fiscal_period_id,
+         je.journal_no, je.source_type, je.status, je.entry_date, je.document_date,
+         je.currency_code, je.description, je.reference_no,
+         je.total_debit_base, je.total_credit_base,
+         je.created_by_user_id, je.posted_by_user_id, je.posted_at,
+         je.reversed_by_user_id, je.reversed_at, je.reverse_reason,
+         je.reversal_journal_entry_id, je.created_at, je.updated_at,
+         le.code AS legal_entity_code, le.name AS legal_entity_name,
+         b.code AS book_code, b.name AS book_name,
+         fp.fiscal_year, fp.period_no, fp.period_name,
+         (
+           SELECT COUNT(*)
+           FROM journal_lines jl
+           WHERE jl.journal_entry_id = je.id
+         ) AS line_count
+       FROM journal_entries je
+       JOIN legal_entities le ON le.id = je.legal_entity_id
+       JOIN books b ON b.id = je.book_id
+       JOIN fiscal_periods fp ON fp.id = je.fiscal_period_id
+       WHERE ${whereSql}
+       ORDER BY je.id DESC
+       LIMIT ?
+       OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    const rows = rowsResult.rows || [];
+
+    if (includeLines && rows.length > 0) {
+      const journalIds = rows
+        .map((row) => parsePositiveInt(row.id))
+        .filter((value) => Boolean(value));
+
+      if (journalIds.length > 0) {
+        const placeholders = journalIds.map(() => "?").join(", ");
+        const lineResult = await query(
+          `SELECT
+             jl.id, jl.journal_entry_id, jl.line_no, jl.account_id,
+             jl.operating_unit_id, jl.counterparty_legal_entity_id,
+             jl.description, jl.currency_code, jl.amount_txn, jl.debit_base,
+             jl.credit_base, jl.tax_code, jl.created_at,
+             a.code AS account_code, a.name AS account_name,
+             ou.code AS operating_unit_code, ou.name AS operating_unit_name,
+             cle.code AS counterparty_legal_entity_code,
+             cle.name AS counterparty_legal_entity_name
+           FROM journal_lines jl
+           JOIN accounts a ON a.id = jl.account_id
+           LEFT JOIN operating_units ou ON ou.id = jl.operating_unit_id
+           LEFT JOIN legal_entities cle ON cle.id = jl.counterparty_legal_entity_id
+           WHERE jl.journal_entry_id IN (${placeholders})
+           ORDER BY jl.journal_entry_id, jl.line_no`,
+          journalIds
+        );
+
+        const linesByJournalId = new Map();
+        for (const line of lineResult.rows || []) {
+          const journalEntryId = parsePositiveInt(line.journal_entry_id);
+          if (!journalEntryId) continue;
+          if (!linesByJournalId.has(journalEntryId)) {
+            linesByJournalId.set(journalEntryId, []);
+          }
+          linesByJournalId.get(journalEntryId).push(line);
+        }
+
+        for (const row of rows) {
+          row.lines = linesByJournalId.get(parsePositiveInt(row.id)) || [];
+        }
+      }
+    }
+
+    return res.json({
+      tenantId,
+      rows,
+      total,
+      limit,
+      offset,
+    });
+  })
+);
+
+router.get(
+  "/journals/:journalId",
+  requirePermission("gl.journal.read", {
+    resolveScope: async (req, tenantId) => {
+      return resolveScopeFromJournalId(req.params?.journalId, tenantId);
+    },
+  }),
+  asyncHandler(async (req, res) => {
+    const tenantId = resolveTenantId(req);
+    if (!tenantId) throw badRequest("tenantId is required");
+
+    const journalId = parsePositiveInt(req.params.journalId);
+    if (!journalId) {
+      throw badRequest("journalId must be a positive integer");
+    }
+
+    const rowResult = await query(
+      `SELECT
+         je.id, je.tenant_id, je.legal_entity_id, je.book_id, je.fiscal_period_id,
+         je.journal_no, je.source_type, je.status, je.entry_date, je.document_date,
+         je.currency_code, je.description, je.reference_no,
+         je.total_debit_base, je.total_credit_base,
+         je.created_by_user_id, je.posted_by_user_id, je.posted_at,
+         je.reversed_by_user_id, je.reversed_at, je.reverse_reason,
+         je.reversal_journal_entry_id, je.created_at, je.updated_at,
+         le.code AS legal_entity_code, le.name AS legal_entity_name,
+         b.code AS book_code, b.name AS book_name,
+         fp.fiscal_year, fp.period_no, fp.period_name
+       FROM journal_entries je
+       JOIN legal_entities le ON le.id = je.legal_entity_id
+       JOIN books b ON b.id = je.book_id
+       JOIN fiscal_periods fp ON fp.id = je.fiscal_period_id
+       WHERE je.id = ?
+         AND je.tenant_id = ?
+       LIMIT 1`,
+      [journalId, tenantId]
+    );
+    const journal = rowResult.rows[0];
+    if (!journal) {
+      throw badRequest("Journal not found");
+    }
+
+    assertScopeAccess(req, "legal_entity", journal.legal_entity_id, "journal.legalEntityId");
+
+    const lineResult = await query(
+      `SELECT
+         jl.id, jl.journal_entry_id, jl.line_no, jl.account_id,
+         jl.operating_unit_id, jl.counterparty_legal_entity_id,
+         jl.description, jl.currency_code, jl.amount_txn, jl.debit_base,
+         jl.credit_base, jl.tax_code, jl.created_at,
+         a.code AS account_code, a.name AS account_name,
+         ou.code AS operating_unit_code, ou.name AS operating_unit_name,
+         cle.code AS counterparty_legal_entity_code,
+         cle.name AS counterparty_legal_entity_name
+       FROM journal_lines jl
+       JOIN accounts a ON a.id = jl.account_id
+       LEFT JOIN operating_units ou ON ou.id = jl.operating_unit_id
+       LEFT JOIN legal_entities cle ON cle.id = jl.counterparty_legal_entity_id
+       WHERE jl.journal_entry_id = ?
+       ORDER BY jl.line_no`,
+      [journalId]
+    );
+
+    return res.json({
+      tenantId,
+      row: {
+        ...journal,
+        lines: lineResult.rows || [],
+      },
+    });
   })
 );
 

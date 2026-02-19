@@ -17,6 +17,25 @@ const SCOPE_ASSIGNMENTS_PAGE_PERMISSIONS = [
 ];
 
 const AUDIT_LOGS_PAGE_PERMISSIONS = ["security.audit.read"];
+const COMPANY_SETTINGS_PAGE_PERMISSIONS = ["onboarding.company.setup"];
+const ORG_SETTINGS_PAGE_PERMISSIONS = ["org.tree.read", "org.fiscal_calendar.read"];
+const GL_SETUP_PAGE_PERMISSIONS = [
+  "gl.book.read",
+  "gl.coa.read",
+  "gl.account.read",
+  "gl.book.upsert",
+  "gl.coa.upsert",
+  "gl.account.upsert",
+  "gl.account_mapping.upsert",
+];
+const JOURNAL_PAGE_PERMISSIONS = [
+  "gl.journal.read",
+  "gl.journal.create",
+  "gl.journal.post",
+  "gl.journal.reverse",
+  "gl.trial_balance.read",
+  "gl.period.close",
+];
 
 export const sidebarItems = [
   {
@@ -57,6 +76,8 @@ export const sidebarItems = [
       {
         label: "Mahsup",
         to: "/app/mahsup-islemleri",
+        requiredPermissions: JOURNAL_PAGE_PERMISSIONS,
+        implemented: true,
       },
     ],
   },
@@ -261,6 +282,14 @@ export const sidebarItems = [
       {
         label: "Sirket Ayarlari",
         to: "/app/ayarlar/sirket-ayarlari",
+        requiredPermissions: COMPANY_SETTINGS_PAGE_PERMISSIONS,
+        implemented: true,
+      },
+      {
+        label: "Organizasyon Yonetimi",
+        to: "/app/ayarlar/organizasyon-yonetimi",
+        requiredPermissions: ORG_SETTINGS_PAGE_PERMISSIONS,
+        implemented: true,
       },
       {
         label: "Hesap Plani Olustur",
@@ -270,6 +299,8 @@ export const sidebarItems = [
       {
         label: "Hesap Plani Ayarlari",
         to: "/app/ayarlar/hesap-plani-ayarlari",
+        requiredPermissions: GL_SETUP_PAGE_PERMISSIONS,
+        implemented: true,
       },
       {
         label: "Stok Ayarlari",
