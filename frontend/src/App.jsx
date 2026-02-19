@@ -6,6 +6,10 @@ import AppLayout from "./layouts/AppLayout";
 import RequireAuth from "./auth/RequireAuth";
 import AcilisFisiOlustur from "./pages/AcilisFisiOlustur";
 import HesapPlaniOlustur from "./pages/settings/HesapPlaniOlustur";
+import RolesPermissionsPage from "./pages/security/RolesPermissionsPage";
+import UserAssignmentsPage from "./pages/security/UserAssignmentsPage";
+import ScopeAssignmentsPage from "./pages/security/ScopeAssignmentsPage";
+import RbacAuditLogsPage from "./pages/security/RbacAuditLogsPage";
 
 export default function App() {
   return (
@@ -31,6 +35,22 @@ export default function App() {
         <Route path="acilis-fisi" element={<AcilisFisiOlustur />} />
         {/* /app/hesap-plani-olustur */}
         <Route path="ayarlar/hesap-plani-olustur" element={<HesapPlaniOlustur />} />
+        <Route
+          path="ayarlar/rbac/roles-permissions"
+          element={<RolesPermissionsPage />}
+        />
+        <Route
+          path="ayarlar/rbac/user-assignments"
+          element={<UserAssignmentsPage />}
+        />
+        <Route
+          path="ayarlar/rbac/scope-assignments"
+          element={<ScopeAssignmentsPage />}
+        />
+        <Route
+          path="ayarlar/rbac/audit-logs"
+          element={<RbacAuditLogsPage />}
+        />
       </Route>
 
       {/* 404 */}

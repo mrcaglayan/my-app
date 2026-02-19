@@ -10,7 +10,7 @@ router.get("/", requireAuth, async (req, res, next) => {
     const userId = req.user.userId;
 
     const { rows } = await query(
-      "SELECT id, email, name, created_at FROM users WHERE id = ?",
+      "SELECT id, tenant_id, email, name, status, created_at FROM users WHERE id = ?",
       [userId]
     );
 

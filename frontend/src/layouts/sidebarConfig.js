@@ -232,6 +232,22 @@
         to: "/app/ayarlar/kullanici-yonetimi",
       },
       {
+        label: "Roller & Yetkiler",
+        to: "/app/ayarlar/rbac/roles-permissions",
+      },
+      {
+        label: "Kullanici Rol Atamalari",
+        to: "/app/ayarlar/rbac/user-assignments",
+      },
+      {
+        label: "Scope Atamalari",
+        to: "/app/ayarlar/rbac/scope-assignments",
+      },
+      {
+        label: "RBAC Denetim Loglari",
+        to: "/app/ayarlar/rbac/audit-logs",
+      },
+      {
         label: "Şirket Ayarları",
         to: "/app/ayarlar/sirket-ayarları",
       },

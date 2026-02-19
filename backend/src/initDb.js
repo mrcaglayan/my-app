@@ -1,10 +1,9 @@
-import { closePool, ensureDatabaseExists } from "./db.js";
-import { ensureUsersTable } from "./dbSchema.js";
+import { closePool } from "./db.js";
+import { runMigrations } from "./migrationRunner.js";
 
 async function run() {
-  await ensureDatabaseExists();
-  await ensureUsersTable();
-  console.log("Database schema is ready");
+  await runMigrations();
+  console.log("Database schema is ready via migrations");
 }
 
 run()

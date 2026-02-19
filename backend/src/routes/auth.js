@@ -15,7 +15,7 @@ router.post("/login", async (req, res, next) => {
     }
 
     const { rows } = await query(
-      "SELECT id, email, password_hash, name FROM users WHERE email = ?",
+      "SELECT id, email, password_hash, name, tenant_id FROM users WHERE email = ?",
       [email]
     );
 
@@ -30,7 +30,7 @@ router.post("/login", async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, tenantId: user.tenant_id || null },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
