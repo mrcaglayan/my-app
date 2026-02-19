@@ -1,14 +1,32 @@
-﻿export const sidebarItems = [
-  // Gösterge Paneli
+const ROLE_PERMISSIONS_PAGE_PERMISSIONS = [
+  "security.role.read",
+  "security.permission.read",
+  "security.role.upsert",
+  "security.role_permissions.assign",
+];
+
+const USER_ASSIGNMENTS_PAGE_PERMISSIONS = [
+  "security.role_assignment.read",
+  "security.role_assignment.upsert",
+];
+
+const SCOPE_ASSIGNMENTS_PAGE_PERMISSIONS = [
+  "security.data_scope.read",
+  "security.data_scope.upsert",
+  "security.role_assignment.read",
+];
+
+const AUDIT_LOGS_PAGE_PERMISSIONS = ["security.audit.read"];
+
+export const sidebarItems = [
   {
     type: "link",
-    label: "Gösterge Paneli",
+    label: "Dashboard",
     to: "/app",
     end: true,
     icon: "dashboard",
-    badge: "NEW",
+    implemented: true,
   },
-  // Donem Islemleri
   {
     type: "section",
     title: "Donem Islemleri",
@@ -18,16 +36,15 @@
       {
         label: "Acilis Fisi Olustur",
         to: "/app/acilis-fisi",
+        implemented: true,
       },
     ],
   },
-  // Yevmiye Kayıtları
   {
     type: "section",
-    title: "Yevmiye Kayıtları",
+    title: "Yevmiye Kayitlari",
     icon: "journal",
-    badge: "3",
-    matchPrefix: "/app/journal-entries",
+    matchPrefix: "/app/yevmiye-kayitlari",
     items: [
       {
         label: "Tediye",
@@ -39,11 +56,10 @@
       },
       {
         label: "Mahsup",
-        to: "/app/mahusp-islemleri",
+        to: "/app/mahsup-islemleri",
       },
     ],
   },
-  // Banka Islemleri
   {
     type: "section",
     title: "Banka Islemleri",
@@ -51,48 +67,39 @@
     matchPrefix: "/app/banka-islemleri",
     items: [
       {
-        label: "Banka TanÄ±mla",
+        label: "Banka Tanimla",
         to: "/app/banka-tanimla",
       },
       {
-        label: "Banka Ä°ÅŸlemleri",
+        label: "Banka Islemleri",
         to: "/app/banka-islemleri",
       },
     ],
   },
-  // Cari İşlemler
   {
     type: "section",
-    title: "Cari İşlemler",
+    title: "Cari Islemler",
     icon: "company",
     matchPrefix: "/app/cari-islemler",
     items: [
       {
-        type: "section",
-        title: "Cari İşlemler",
-        icon: "company",
-        matchPrefix: "/app/cari-islemler",
-        items: [
-          {
-            label: "Alıcılar Kartı Oluştur",
-            to: "/app/alici-kart-olustur",
-          },
-          {
-            label: "Alıcılar Kartı Listesi",
-            to: "/app/alici-kart-listesi",
-          },
-          {
-            label: "Satıcılar Kartı Oluştur",
-            to: "/app/satici-kart-olustur",
-          },
-          {
-            label: "Satıcılar Kartı Listesi",
-            to: "/app/satici-kart-listesi",
-          },
-        ],
-      }],
+        label: "Alici Karti Olustur",
+        to: "/app/alici-kart-olustur",
+      },
+      {
+        label: "Alici Karti Listesi",
+        to: "/app/alici-kart-listesi",
+      },
+      {
+        label: "Satici Karti Olustur",
+        to: "/app/satici-kart-olustur",
+      },
+      {
+        label: "Satici Karti Listesi",
+        to: "/app/satici-kart-listesi",
+      },
+    ],
   },
-  //Stoklar
   {
     type: "section",
     title: "Stoklar",
@@ -100,94 +107,91 @@
     matchPrefix: "/app/stoklar",
     items: [
       {
-        label: "Stok Kartı Oluştur",
+        label: "Stok Karti Olustur",
         to: "/app/stok-karti-olustur",
       },
       {
-        label: "Stok Yansıtma İşlemleri",
+        label: "Stok Yansitma Islemleri",
         to: "/app/stok-yansitma-islemleri",
       },
       {
-        label: "Stok Kartı Listesi",
+        label: "Stok Karti Listesi",
         to: "/app/stok-karti-listesi",
       },
     ],
   },
-  // Demirbaşlar
   {
     type: "section",
-    title: "Demirbaşlar",
+    title: "Demirbaslar",
     icon: "inventory",
     matchPrefix: "/app/demirbaslar",
     items: [
       {
-        label: "Demirbaş Kartı Oluştur",
+        label: "Demirbas Karti Olustur",
         to: "/app/demirbas-karti-olustur",
       },
       {
-        label: "Demirbaş Alım İşlemleri",
+        label: "Demirbas Alim Islemleri",
         to: "/app/demirbas-alim-islemleri",
       },
       {
-        label: "Demirbaş Satış İşlemleri",
+        label: "Demirbas Satis Islemleri",
         to: "/app/demirbas-satis-islemleri",
       },
       {
-        label: "Amortisman Ayarları",
+        label: "Amortisman Ayarlari",
         to: "/app/demirbas-amortisman-ayarlar",
-      }
+      },
     ],
   },
-  //Dönem Sonu İşlemler
   {
     type: "section",
-    title: "Dönem Sonu İşlemler",
+    title: "Donem Sonu Islemler",
     icon: "calendar",
     matchPrefix: "/app/donem-sonu-islemler",
     items: [
       {
         type: "section",
-        title: "Aylık Dönem Sonu İşlemler",
+        title: "Aylik Donem Sonu Islemler",
         icon: "calendar",
         matchPrefix: "/app/donem-sonu-islemler/aylik",
         items: [
           {
-            label: "Değerleme İşlemleri",
+            label: "Degerleme Islemleri",
             to: "/app/donem-sonu-islemler/aylik/degerleme-islemleri",
           },
           {
-            label: "Amortisman İşlemleri",
+            label: "Amortisman Islemleri",
             to: "/app/donem-sonu-islemler/aylik/amortisman-islemleri",
           },
           {
-            label: "Beyanname İşlemleri",
+            label: "Beyanname Islemleri",
             to: "/app/donem-sonu-islemler/aylik/beyanname-islemleri",
-          }
+          },
         ],
       },
       {
         type: "section",
-        title: "Yıllık Dönem Sonu İşlemleri",
+        title: "Yillik Donem Sonu Islemleri",
         icon: "calendar",
         matchPrefix: "/app/donem-sonu-islemler/yillik",
         items: [
           {
-            label: "Envanter İşlemleri",
+            label: "Envanter Islemleri",
             to: "/app/donem-sonu-islemler/yillik/envanter-islemleri",
           },
           {
-            label: "Kapanış İşlemleri",
+            label: "Kapanis Islemleri",
             to: "/app/donem-sonu-islemler/yillik/kapanis-islemleri",
           },
           {
-            label: "Yansıtma İşlemleri",
+            label: "Yansitma Islemleri",
             to: "/app/donem-sonu-islemler/yillik/yansitma-islemleri",
-          }
+          },
         ],
-      }
+      },
     ],
   },
-  //Raporlar
   {
     type: "section",
     title: "Raporlar",
@@ -199,7 +203,7 @@
         to: "/app/defter-i-kebir",
       },
       {
-        label: "Bilanço",
+        label: "Bilanco",
         to: "/app/bilanco",
       },
       {
@@ -211,16 +215,15 @@
         to: "/app/stok-raporu",
       },
       {
-        label: "Demirbaş Raporu",
+        label: "Demirbas Raporu",
         to: "/app/demirbas-raporu",
       },
       {
         label: "Mizan Raporu",
         to: "/app/mizan-raporu",
-      }
+      },
     ],
   },
-  // Ayarlar
   {
     type: "section",
     title: "Ayarlar",
@@ -228,45 +231,82 @@
     matchPrefix: "/app/ayarlar",
     items: [
       {
-        label: "Kullanıcı Yönetimi",
+        label: "Kullanici Yonetimi",
         to: "/app/ayarlar/kullanici-yonetimi",
       },
       {
-        label: "Roller & Yetkiler",
+        label: "Roller ve Yetkiler",
         to: "/app/ayarlar/rbac/roles-permissions",
+        requiredPermissions: ROLE_PERMISSIONS_PAGE_PERMISSIONS,
+        implemented: true,
       },
       {
         label: "Kullanici Rol Atamalari",
         to: "/app/ayarlar/rbac/user-assignments",
+        requiredPermissions: USER_ASSIGNMENTS_PAGE_PERMISSIONS,
+        implemented: true,
       },
       {
         label: "Scope Atamalari",
         to: "/app/ayarlar/rbac/scope-assignments",
+        requiredPermissions: SCOPE_ASSIGNMENTS_PAGE_PERMISSIONS,
+        implemented: true,
       },
       {
         label: "RBAC Denetim Loglari",
         to: "/app/ayarlar/rbac/audit-logs",
+        requiredPermissions: AUDIT_LOGS_PAGE_PERMISSIONS,
+        implemented: true,
       },
       {
-        label: "Şirket Ayarları",
-        to: "/app/ayarlar/sirket-ayarları",
+        label: "Sirket Ayarlari",
+        to: "/app/ayarlar/sirket-ayarlari",
       },
       {
-        label: "Hesap Planı Oluştur",
+        label: "Hesap Plani Olustur",
         to: "/app/ayarlar/hesap-plani-olustur",
+        implemented: true,
       },
       {
-        label: "Hesap Planı Ayarları",
-        to: "/app/ayarlar/hesap-plani-ayarları",
+        label: "Hesap Plani Ayarlari",
+        to: "/app/ayarlar/hesap-plani-ayarlari",
       },
       {
-        label: "Stok Ayarları",
-        to: "/app/ayarlar/stok-ayarları",
+        label: "Stok Ayarlari",
+        to: "/app/ayarlar/stok-ayarlari",
       },
       {
-        label: "Demirbaş Ayarları",
-        to: "/app/ayarlar/demirbas-ayarları",
-      }
+        label: "Demirbas Ayarlari",
+        to: "/app/ayarlar/demirbas-ayarlari",
+      },
     ],
   },
 ];
+
+function isSectionItem(item) {
+  return item?.type === "section" || Array.isArray(item?.items);
+}
+
+export function collectSidebarLinks(items = sidebarItems) {
+  const byPath = new Map();
+
+  function walk(nodes) {
+    if (!Array.isArray(nodes)) {
+      return;
+    }
+
+    for (const node of nodes) {
+      if (isSectionItem(node)) {
+        walk(node.items);
+        continue;
+      }
+
+      if (node?.to && !byPath.has(node.to)) {
+        byPath.set(node.to, node);
+      }
+    }
+  }
+
+  walk(items);
+  return Array.from(byPath.values());
+}

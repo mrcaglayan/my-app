@@ -275,6 +275,14 @@ const spec = {
           "401": errorResponseRef,
         },
       },
+      put: {
+        tags: ["Security"],
+        operationId: "replaceRolePermissions",
+        summary: "Replace permissions of role",
+        parameters: [pathParam("roleId", "Role identifier")],
+        requestBody: bodyFromRef("#/components/schemas/RolePermissionsInput"),
+        responses: withStandardResponses("200", "Role permissions replaced"),
+      },
     },
     "/api/v1/security/role-assignments": {
       get: {
@@ -316,6 +324,21 @@ const spec = {
         responses: withStandardResponses("200", "Role assignment deleted", "#/components/schemas/Ok"),
       },
     },
+    "/api/v1/security/role-assignments/{assignmentId}/scope": {
+      put: {
+        tags: ["Security"],
+        operationId: "replaceRoleAssignmentScope",
+        summary: "Replace scope/effect of an existing role assignment",
+        parameters: [pathParam("assignmentId", "Assignment identifier")],
+        requestBody: bodyFromRef(
+          "#/components/schemas/RoleAssignmentScopeReplaceInput"
+        ),
+        responses: withStandardResponses(
+          "200",
+          "Role assignment scope replaced"
+        ),
+      },
+    },
     "/api/v1/security/permissions": {
       get: {
         tags: ["Security"],
@@ -330,6 +353,23 @@ const spec = {
           },
         ],
         responses: withStandardResponses("200", "Permission list"),
+      },
+    },
+    "/api/v1/security/users": {
+      get: {
+        tags: ["Security"],
+        operationId: "listSecurityUsers",
+        summary: "List tenant users for RBAC administration",
+        parameters: [
+          queryParamInt("tenantId", false, "Tenant identifier"),
+          {
+            in: "query",
+            name: "q",
+            required: false,
+            schema: { type: "string" },
+          },
+        ],
+        responses: withStandardResponses("200", "User list"),
       },
     },
     "/api/v1/security/data-scopes": {
@@ -365,6 +405,75 @@ const spec = {
         summary: "Delete data scope",
         parameters: [pathParam("dataScopeId", "Data scope identifier")],
         responses: withStandardResponses("200", "Data scope deleted", "#/components/schemas/Ok"),
+      },
+    },
+    "/api/v1/security/data-scopes/users/{userId}/replace": {
+      put: {
+        tags: ["Security"],
+        operationId: "replaceUserDataScopes",
+        summary: "Replace all data scopes for a user",
+        parameters: [pathParam("userId", "User identifier")],
+        requestBody: bodyFromRef("#/components/schemas/DataScopeReplaceInput"),
+        responses: withStandardResponses("200", "User data scopes replaced"),
+      },
+    },
+    "/api/v1/rbac/audit-logs": {
+      get: {
+        tags: ["Security"],
+        operationId: "listRbacAuditLogs",
+        summary: "List RBAC audit logs",
+        parameters: [
+          queryParamInt("tenantId", false, "Tenant identifier"),
+          queryParamInt("page", false, "Page number"),
+          queryParamInt("pageSize", false, "Page size"),
+          queryParamInt("scopeId", false, "Scope identifier"),
+          queryParamInt("actorUserId", false, "Actor user identifier"),
+          queryParamInt("targetUserId", false, "Target user identifier"),
+          {
+            in: "query",
+            name: "scopeType",
+            required: false,
+            schema: {
+              type: "string",
+              enum: [
+                "TENANT",
+                "GROUP",
+                "COUNTRY",
+                "LEGAL_ENTITY",
+                "OPERATING_UNIT",
+              ],
+            },
+          },
+          {
+            in: "query",
+            name: "action",
+            required: false,
+            schema: { type: "string" },
+          },
+          {
+            in: "query",
+            name: "resourceType",
+            required: false,
+            schema: { type: "string" },
+          },
+          {
+            in: "query",
+            name: "createdFrom",
+            required: false,
+            schema: { type: "string", format: "date-time" },
+          },
+          {
+            in: "query",
+            name: "createdTo",
+            required: false,
+            schema: { type: "string", format: "date-time" },
+          },
+        ],
+        responses: withStandardResponses(
+          "200",
+          "RBAC audit logs",
+          "#/components/schemas/RbacAuditLogListResponse"
+        ),
       },
     },
     "/api/v1/gl/books": {
@@ -695,6 +804,27 @@ const spec = {
       },
     },
     "/api/v1/consolidation/runs": {
+      get: {
+        tags: ["Consolidation"],
+        operationId: "listConsolidationRuns",
+        summary: "List consolidation runs",
+        parameters: [
+          queryParamInt("tenantId", false, "Tenant identifier"),
+          queryParamInt(
+            "consolidationGroupId",
+            false,
+            "Consolidation group identifier"
+          ),
+          queryParamInt("fiscalPeriodId", false, "Fiscal period identifier"),
+          {
+            in: "query",
+            name: "status",
+            required: false,
+            schema: { type: "string" },
+          },
+        ],
+        responses: withStandardResponses("200", "Consolidation run list"),
+      },
       post: {
         tags: ["Consolidation"],
         operationId: "createConsolidationRun",
@@ -704,6 +834,32 @@ const spec = {
           "201",
           "Consolidation run created",
           "#/components/schemas/ConsolidationRunResponse"
+        ),
+      },
+    },
+    "/api/v1/consolidation/runs/{runId}": {
+      get: {
+        tags: ["Consolidation"],
+        operationId: "getConsolidationRun",
+        summary: "Get consolidation run details",
+        parameters: [pathParam("runId", "Consolidation run identifier")],
+        responses: withStandardResponses("200", "Consolidation run details"),
+      },
+    },
+    "/api/v1/consolidation/runs/{runId}/execute": {
+      post: {
+        tags: ["Consolidation"],
+        operationId: "executeConsolidationRun",
+        summary: "Execute consolidation run",
+        parameters: [pathParam("runId", "Consolidation run identifier")],
+        requestBody: bodyFromRef(
+          "#/components/schemas/ConsolidationRunExecuteInput",
+          false
+        ),
+        responses: withStandardResponses(
+          "200",
+          "Consolidation run executed",
+          "#/components/schemas/ConsolidationRunExecuteResponse"
         ),
       },
     },
@@ -758,6 +914,30 @@ const spec = {
           "200",
           "Consolidation trial balance report",
           "#/components/schemas/ConsolidationTrialBalanceResponse"
+        ),
+      },
+    },
+    "/api/v1/consolidation/runs/{runId}/reports/summary": {
+      get: {
+        tags: ["Consolidation"],
+        operationId: "getConsolidationSummaryReport",
+        summary: "Get consolidation summary report",
+        parameters: [
+          pathParam("runId", "Consolidation run identifier"),
+          {
+            in: "query",
+            name: "groupBy",
+            required: false,
+            schema: {
+              type: "string",
+              enum: ["account", "entity", "account_entity"],
+            },
+          },
+        ],
+        responses: withStandardResponses(
+          "200",
+          "Consolidation summary report",
+          "#/components/schemas/ConsolidationSummaryReportResponse"
         ),
       },
     },
@@ -1042,6 +1222,51 @@ const spec = {
         },
         required: ["runId", "rows"],
       },
+      ConsolidationRunExecuteResponse: {
+        type: "object",
+        properties: {
+          ok: { type: "boolean" },
+          runId: intId,
+          status: { type: "string" },
+          preferredRateType: {
+            type: "string",
+            enum: ["SPOT", "AVERAGE", "CLOSING"],
+          },
+          insertedRowCount: { type: "integer", minimum: 0 },
+          totals: { type: "object", additionalProperties: true },
+        },
+        required: ["ok", "runId", "status", "insertedRowCount"],
+      },
+      ConsolidationSummaryReportResponse: {
+        type: "object",
+        properties: {
+          runId: intId,
+          groupBy: {
+            type: "string",
+            enum: ["account", "entity", "account_entity"],
+          },
+          run: { type: "object", additionalProperties: true },
+          totals: { type: "object", additionalProperties: true },
+          rows: {
+            type: "array",
+            items: { type: "object", additionalProperties: true },
+          },
+        },
+        required: ["runId", "groupBy", "totals", "rows"],
+      },
+      RbacAuditLogListResponse: {
+        type: "object",
+        properties: {
+          tenantId: intId,
+          filters: { type: "object", additionalProperties: true },
+          pagination: { type: "object", additionalProperties: true },
+          rows: {
+            type: "array",
+            items: { type: "object", additionalProperties: true },
+          },
+        },
+        required: ["tenantId", "pagination", "rows"],
+      },
       JournalLineInput: {
         type: "object",
         properties: {
@@ -1188,6 +1413,40 @@ const spec = {
         },
         required: ["userId", "roleId", "scopeType", "scopeId", "effect"],
       },
+      RoleAssignmentScopeReplaceInput: {
+        type: "object",
+        properties: {
+          scopeType: {
+            type: "string",
+            enum: ["TENANT", "GROUP", "COUNTRY", "LEGAL_ENTITY", "OPERATING_UNIT"],
+          },
+          scopeId: intId,
+          effect: { type: "string", enum: ["ALLOW", "DENY"] },
+        },
+        required: ["scopeType", "scopeId", "effect"],
+      },
+      DataScopeItemInput: {
+        type: "object",
+        properties: {
+          scopeType: {
+            type: "string",
+            enum: ["TENANT", "GROUP", "COUNTRY", "LEGAL_ENTITY", "OPERATING_UNIT"],
+          },
+          scopeId: intId,
+          effect: { type: "string", enum: ["ALLOW", "DENY"] },
+        },
+        required: ["scopeType", "scopeId", "effect"],
+      },
+      DataScopeReplaceInput: {
+        type: "object",
+        properties: {
+          scopes: {
+            type: "array",
+            items: { $ref: "#/components/schemas/DataScopeItemInput" },
+          },
+        },
+        required: ["scopes"],
+      },
       BookInput: {
         type: "object",
         properties: {
@@ -1328,6 +1587,15 @@ const spec = {
           runId: { type: "integer", nullable: true },
         },
         required: ["ok"],
+      },
+      ConsolidationRunExecuteInput: {
+        type: "object",
+        properties: {
+          rateType: {
+            type: "string",
+            enum: ["SPOT", "AVERAGE", "CLOSING"],
+          },
+        },
       },
       EliminationCreateInput: {
         type: "object",

@@ -201,8 +201,50 @@ function hasActiveChildPath(items, pathname) {
   });
 }
 
+function hasRequiredPermissions(item, hasAnyPermission) {
+  const requiredPermissions = Array.isArray(item?.requiredPermissions)
+    ? item.requiredPermissions
+    : [];
+
+  if (requiredPermissions.length === 0) {
+    return true;
+  }
+
+  return hasAnyPermission(requiredPermissions);
+}
+
+function filterSidebarItemsByPermissions(items, hasAnyPermission) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  const visible = [];
+  for (const item of items) {
+    if (!hasRequiredPermissions(item, hasAnyPermission)) {
+      continue;
+    }
+
+    if (!isSectionItem(item)) {
+      visible.push(item);
+      continue;
+    }
+
+    const children = filterSidebarItemsByPermissions(item.items, hasAnyPermission);
+    if (children.length === 0) {
+      continue;
+    }
+
+    visible.push({
+      ...item,
+      items: children,
+    });
+  }
+
+  return visible;
+}
+
 export default function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, hasAnyPermission } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
@@ -230,6 +272,11 @@ export default function AppLayout() {
       };
     });
   }, [location.pathname, t]);
+
+  const visibleSidebarItems = useMemo(
+    () => filterSidebarItemsByPermissions(sidebarItems, hasAnyPermission),
+    [hasAnyPermission]
+  );
 
   const closeMobileSidebar = () => setMobileOpen(false);
 
@@ -265,7 +312,14 @@ export default function AppLayout() {
           className={subLinkClass}
           onClick={closeMobileSidebar}
         >
-          {getItemDisplayText(subItem, "label")}
+          <span className="flex items-center justify-between gap-2">
+            <span className="truncate">{getItemDisplayText(subItem, "label")}</span>
+            {subItem.implemented !== true && (
+              <span className="rounded-full border border-slate-600 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
+                Soon
+              </span>
+            )}
+          </span>
         </NavLink>
       );
     });
@@ -314,7 +368,7 @@ export default function AppLayout() {
           className={`flex-1 space-y-1 px-3 py-4 ${collapsed ? "overflow-visible" : "overflow-y-auto"
             }`}
         >
-          {sidebarItems.map((item) => {
+          {visibleSidebarItems.map((item) => {
             if (item.type === "link") {
               return (
                 <NavLink

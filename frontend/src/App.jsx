@@ -4,23 +4,82 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./layouts/AppLayout";
 import RequireAuth from "./auth/RequireAuth";
+import RequirePermission from "./auth/RequirePermission";
 import AcilisFisiOlustur from "./pages/AcilisFisiOlustur";
 import HesapPlaniOlustur from "./pages/settings/HesapPlaniOlustur";
 import RolesPermissionsPage from "./pages/security/RolesPermissionsPage";
 import UserAssignmentsPage from "./pages/security/UserAssignmentsPage";
 import ScopeAssignmentsPage from "./pages/security/ScopeAssignmentsPage";
 import RbacAuditLogsPage from "./pages/security/RbacAuditLogsPage";
+import ModulePlaceholderPage from "./pages/ModulePlaceholderPage";
+import { collectSidebarLinks, sidebarItems } from "./layouts/sidebarConfig.js";
+
+const sidebarLinks = collectSidebarLinks(sidebarItems);
+const sidebarLinkByPath = new Map(sidebarLinks.map((link) => [link.to, link]));
+
+const implementedRoutes = [
+  {
+    appPath: "/app/acilis-fisi",
+    childPath: "acilis-fisi",
+    element: <AcilisFisiOlustur />,
+  },
+  {
+    appPath: "/app/ayarlar/hesap-plani-olustur",
+    childPath: "ayarlar/hesap-plani-olustur",
+    element: <HesapPlaniOlustur />,
+  },
+  {
+    appPath: "/app/ayarlar/rbac/roles-permissions",
+    childPath: "ayarlar/rbac/roles-permissions",
+    element: <RolesPermissionsPage />,
+  },
+  {
+    appPath: "/app/ayarlar/rbac/user-assignments",
+    childPath: "ayarlar/rbac/user-assignments",
+    element: <UserAssignmentsPage />,
+  },
+  {
+    appPath: "/app/ayarlar/rbac/scope-assignments",
+    childPath: "ayarlar/rbac/scope-assignments",
+    element: <ScopeAssignmentsPage />,
+  },
+  {
+    appPath: "/app/ayarlar/rbac/audit-logs",
+    childPath: "ayarlar/rbac/audit-logs",
+    element: <RbacAuditLogsPage />,
+  },
+];
+
+const implementedPaths = new Set([
+  "/app",
+  ...implementedRoutes.map((route) => route.appPath),
+]);
+
+const placeholderRoutes = sidebarLinks.filter(
+  (link) => link.to.startsWith("/app/") && !implementedPaths.has(link.to)
+);
+
+function withPermissionGuard(appPath, element) {
+  const requiredPermissions = sidebarLinkByPath.get(appPath)?.requiredPermissions;
+  if (!Array.isArray(requiredPermissions) || requiredPermissions.length === 0) {
+    return element;
+  }
+
+  return (
+    <RequirePermission anyOf={requiredPermissions}>{element}</RequirePermission>
+  );
+}
+
+function toChildPath(appPath) {
+  return appPath.replace(/^\/app\//, "");
+}
 
 export default function App() {
   return (
     <Routes>
-      {/* Default entry */}
       <Route path="/" element={<Navigate to="/app" replace />} />
-
-      {/* Public */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Protected area with sidebar layout */}
       <Route
         path="/app"
         element={
@@ -29,31 +88,28 @@ export default function App() {
           </RequireAuth>
         }
       >
-        {/* /app */}
         <Route index element={<Dashboard />} />
-        {/* /app/acilis-fisi */}
-        <Route path="acilis-fisi" element={<AcilisFisiOlustur />} />
-        {/* /app/hesap-plani-olustur */}
-        <Route path="ayarlar/hesap-plani-olustur" element={<HesapPlaniOlustur />} />
-        <Route
-          path="ayarlar/rbac/roles-permissions"
-          element={<RolesPermissionsPage />}
-        />
-        <Route
-          path="ayarlar/rbac/user-assignments"
-          element={<UserAssignmentsPage />}
-        />
-        <Route
-          path="ayarlar/rbac/scope-assignments"
-          element={<ScopeAssignmentsPage />}
-        />
-        <Route
-          path="ayarlar/rbac/audit-logs"
-          element={<RbacAuditLogsPage />}
-        />
+
+        {implementedRoutes.map((route) => (
+          <Route
+            key={route.appPath}
+            path={route.childPath}
+            element={withPermissionGuard(route.appPath, route.element)}
+          />
+        ))}
+
+        {placeholderRoutes.map((link) => (
+          <Route
+            key={link.to}
+            path={toChildPath(link.to)}
+            element={withPermissionGuard(
+              link.to,
+              <ModulePlaceholderPage title={link.label || "Module"} path={link.to} />
+            )}
+          />
+        ))}
       </Route>
 
-      {/* 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

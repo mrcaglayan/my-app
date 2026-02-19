@@ -5,8 +5,10 @@ import {
   listRoles,
   replaceRolePermissions,
 } from "../../api/rbacAdmin.js";
+import { useAuth } from "../../auth/useAuth.js";
 
 export default function RolesPermissionsPage() {
+  const { hasPermission } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -56,6 +58,10 @@ export default function RolesPermissionsPage() {
     () => roles.find((row) => Number(row.id) === Number(selectedRoleId)) || null,
     [roles, selectedRoleId]
   );
+  const canUpsertRole = hasPermission("security.role.upsert");
+  const canReplaceRolePermissions = hasPermission(
+    "security.role_permissions.assign"
+  );
 
   function togglePermission(permissionCode) {
     setSelectedPermissionCodes((prev) => {
@@ -68,6 +74,10 @@ export default function RolesPermissionsPage() {
 
   async function handleCreateRole(event) {
     event.preventDefault();
+    if (!canUpsertRole) {
+      setError("Missing permission: security.role.upsert");
+      return;
+    }
     setSaving(true);
     setError("");
     setMessage("");
@@ -88,6 +98,10 @@ export default function RolesPermissionsPage() {
 
   async function handleReplacePermissions() {
     if (!selectedRoleId) {
+      return;
+    }
+    if (!canReplaceRolePermissions) {
+      setError("Missing permission: security.role_permissions.assign");
       return;
     }
     setSaving(true);
@@ -150,7 +164,7 @@ export default function RolesPermissionsPage() {
         />
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || !canUpsertRole}
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
         >
           {saving ? "Saving..." : "Save Role"}
@@ -193,7 +207,7 @@ export default function RolesPermissionsPage() {
             </h2>
             <button
               type="button"
-              disabled={!selectedRoleId || saving}
+              disabled={!selectedRoleId || saving || !canReplaceRolePermissions}
               onClick={handleReplacePermissions}
               className="rounded-lg bg-cyan-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
             >
@@ -215,7 +229,7 @@ export default function RolesPermissionsPage() {
                       type="checkbox"
                       checked={checked}
                       onChange={() => togglePermission(permission.code)}
-                      disabled={!selectedRoleId}
+                      disabled={!selectedRoleId || !canReplaceRolePermissions}
                       className="mt-0.5"
                     />
                     <span>

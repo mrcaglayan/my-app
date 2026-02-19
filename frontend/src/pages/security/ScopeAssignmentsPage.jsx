@@ -10,6 +10,7 @@ import {
   replaceRoleAssignmentScope,
   replaceUserDataScopes,
 } from "../../api/rbacAdmin.js";
+import { useAuth } from "../../auth/useAuth.js";
 
 const SCOPE_TYPES = ["TENANT", "GROUP", "COUNTRY", "LEGAL_ENTITY", "OPERATING_UNIT"];
 const EFFECTS = ["ALLOW", "DENY"];
@@ -23,6 +24,7 @@ function normalizeDataScopeRow(row) {
 }
 
 export default function ScopeAssignmentsPage() {
+  const { hasPermission } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -48,6 +50,10 @@ export default function ScopeAssignmentsPage() {
     legalEntities: [],
     operatingUnits: [],
   });
+  const canReplaceDataScopes = hasPermission("security.data_scope.upsert");
+  const canReplaceRoleAssignmentScope = hasPermission(
+    "security.role_assignment.upsert"
+  );
 
   async function loadUserListAndLookups() {
     setLoading(true);
@@ -173,6 +179,10 @@ export default function ScopeAssignmentsPage() {
     if (!selectedUserId) {
       return;
     }
+    if (!canReplaceDataScopes) {
+      setError("Missing permission: security.data_scope.upsert");
+      return;
+    }
     setSaving(true);
     setError("");
     setMessage("");
@@ -190,6 +200,10 @@ export default function ScopeAssignmentsPage() {
   async function handleReplaceAssignmentScope(event) {
     event.preventDefault();
     if (!selectedAssignmentId) {
+      return;
+    }
+    if (!canReplaceRoleAssignmentScope) {
+      setError("Missing permission: security.role_assignment.upsert");
       return;
     }
     setSaving(true);
@@ -300,12 +314,13 @@ export default function ScopeAssignmentsPage() {
             ))}
           </select>
 
-          <button
-            type="button"
-            onClick={addDataScope}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            Add Scope
+        <button
+          type="button"
+          onClick={addDataScope}
+          disabled={!canReplaceDataScopes}
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          Add Scope
           </button>
         </div>
 
@@ -332,6 +347,7 @@ export default function ScopeAssignmentsPage() {
                     <button
                       type="button"
                       onClick={() => removeDataScope(scope.scopeType, scope.scopeId)}
+                      disabled={!canReplaceDataScopes}
                       className="rounded-lg border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
                     >
                       Remove
@@ -352,7 +368,7 @@ export default function ScopeAssignmentsPage() {
 
         <button
           type="button"
-          disabled={!selectedUserId || saving}
+          disabled={!selectedUserId || saving || !canReplaceDataScopes}
           onClick={handleReplaceDataScopes}
           className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
         >
@@ -437,7 +453,11 @@ export default function ScopeAssignmentsPage() {
             </select>
             <button
               type="submit"
-              disabled={saving || !selectedAssignmentId}
+              disabled={
+                saving ||
+                !selectedAssignmentId ||
+                !canReplaceRoleAssignmentScope
+              }
               className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
               Replace

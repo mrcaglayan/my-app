@@ -6,11 +6,13 @@ import {
   listRoles,
   listUsers,
 } from "../../api/rbacAdmin.js";
+import { useAuth } from "../../auth/useAuth.js";
 
 const SCOPE_TYPES = ["TENANT", "GROUP", "COUNTRY", "LEGAL_ENTITY", "OPERATING_UNIT"];
 const EFFECTS = ["ALLOW", "DENY"];
 
 export default function UserAssignmentsPage() {
+  const { hasPermission } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -25,6 +27,7 @@ export default function UserAssignmentsPage() {
     scopeId: "",
     effect: "ALLOW",
   });
+  const canUpsertAssignments = hasPermission("security.role_assignment.upsert");
 
   async function loadData() {
     setLoading(true);
@@ -51,6 +54,10 @@ export default function UserAssignmentsPage() {
 
   async function handleCreate(event) {
     event.preventDefault();
+    if (!canUpsertAssignments) {
+      setError("Missing permission: security.role_assignment.upsert");
+      return;
+    }
     setSaving(true);
     setError("");
     setMessage("");
@@ -72,6 +79,10 @@ export default function UserAssignmentsPage() {
   }
 
   async function handleDelete(assignmentId) {
+    if (!canUpsertAssignments) {
+      setError("Missing permission: security.role_assignment.upsert");
+      return;
+    }
     const confirmed = window.confirm("Delete this role assignment?");
     if (!confirmed) {
       return;
@@ -193,7 +204,7 @@ export default function UserAssignmentsPage() {
           </select>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || !canUpsertAssignments}
             className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
             {saving ? "Saving..." : "Assign"}
@@ -243,7 +254,7 @@ export default function UserAssignmentsPage() {
                     <td className="px-4 py-2">
                       <button
                         type="button"
-                        disabled={saving}
+                        disabled={saving || !canUpsertAssignments}
                         onClick={() => handleDelete(assignment.id)}
                         className="rounded-lg border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
                       >

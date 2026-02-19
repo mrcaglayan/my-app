@@ -731,6 +731,56 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         }
+      },
+      "put": {
+        "tags": [
+          "Security"
+        ],
+        "operationId": "replaceRolePermissions",
+        "summary": "Replace permissions of role",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "description": "Role identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolePermissionsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Role permissions replaced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnyObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
       }
     },
     "/api/v1/security/role-assignments": {
@@ -890,6 +940,58 @@
         }
       }
     },
+    "/api/v1/security/role-assignments/{assignmentId}/scope": {
+      "put": {
+        "tags": [
+          "Security"
+        ],
+        "operationId": "replaceRoleAssignmentScope",
+        "summary": "Replace scope/effect of an existing role assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignmentId",
+            "required": true,
+            "description": "Assignment identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleAssignmentScopeReplaceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Role assignment scope replaced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnyObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/security/permissions": {
       "get": {
         "tags": [
@@ -910,6 +1012,56 @@
         "responses": {
           "200": {
             "description": "Permission list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnyObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/security/users": {
+      "get": {
+        "tags": [
+          "Security"
+        ],
+        "operationId": "listSecurityUsers",
+        "summary": "List tenant users for RBAC administration",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tenantId",
+            "required": false,
+            "description": "Tenant identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User list",
             "content": {
               "application/json": {
                 "schema": {
@@ -1071,6 +1223,199 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/security/data-scopes/users/{userId}/replace": {
+      "put": {
+        "tags": [
+          "Security"
+        ],
+        "operationId": "replaceUserDataScopes",
+        "summary": "Replace all data scopes for a user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "description": "User identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataScopeReplaceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User data scopes replaced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnyObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/rbac/audit-logs": {
+      "get": {
+        "tags": [
+          "Security"
+        ],
+        "operationId": "listRbacAuditLogs",
+        "summary": "List RBAC audit logs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tenantId",
+            "required": false,
+            "description": "Tenant identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "description": "Page number",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "description": "Page size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeId",
+            "required": false,
+            "description": "Scope identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "actorUserId",
+            "required": false,
+            "description": "Actor user identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetUserId",
+            "required": false,
+            "description": "Target user identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TENANT",
+                "GROUP",
+                "COUNTRY",
+                "LEGAL_ENTITY",
+                "OPERATING_UNIT"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resourceType",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "createdFrom",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "in": "query",
+            "name": "createdTo",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RBAC audit logs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RbacAuditLogListResponse"
                 }
               }
             }
@@ -2408,6 +2753,74 @@
       }
     },
     "/api/v1/consolidation/runs": {
+      "get": {
+        "tags": [
+          "Consolidation"
+        ],
+        "operationId": "listConsolidationRuns",
+        "summary": "List consolidation runs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tenantId",
+            "required": false,
+            "description": "Tenant identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "consolidationGroupId",
+            "required": false,
+            "description": "Consolidation group identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "fiscalPeriodId",
+            "required": false,
+            "description": "Fiscal period identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consolidation run list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnyObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
       "post": {
         "tags": [
           "Consolidation"
@@ -2431,6 +2844,100 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConsolidationRunResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/consolidation/runs/{runId}": {
+      "get": {
+        "tags": [
+          "Consolidation"
+        ],
+        "operationId": "getConsolidationRun",
+        "summary": "Get consolidation run details",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "description": "Consolidation run identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consolidation run details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnyObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/consolidation/runs/{runId}/execute": {
+      "post": {
+        "tags": [
+          "Consolidation"
+        ],
+        "operationId": "executeConsolidationRun",
+        "summary": "Execute consolidation run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "description": "Consolidation run identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsolidationRunExecuteInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consolidation run executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsolidationRunExecuteResponse"
                 }
               }
             }
@@ -2619,6 +3126,61 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConsolidationTrialBalanceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/consolidation/runs/{runId}/reports/summary": {
+      "get": {
+        "tags": [
+          "Consolidation"
+        ],
+        "operationId": "getConsolidationSummaryReport",
+        "summary": "Get consolidation summary report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "description": "Consolidation run identifier",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "groupBy",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "account",
+                "entity",
+                "account_entity"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consolidation summary report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsolidationSummaryReportResponse"
                 }
               }
             }
@@ -3307,6 +3869,110 @@
           "rows"
         ]
       },
+      "ConsolidationRunExecuteResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "runId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string"
+          },
+          "preferredRateType": {
+            "type": "string",
+            "enum": [
+              "SPOT",
+              "AVERAGE",
+              "CLOSING"
+            ]
+          },
+          "insertedRowCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totals": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "ok",
+          "runId",
+          "status",
+          "insertedRowCount"
+        ]
+      },
+      "ConsolidationSummaryReportResponse": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "groupBy": {
+            "type": "string",
+            "enum": [
+              "account",
+              "entity",
+              "account_entity"
+            ]
+          },
+          "run": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "totals": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "runId",
+          "groupBy",
+          "totals",
+          "rows"
+        ]
+      },
+      "RbacAuditLogListResponse": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "filters": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "pagination": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "tenantId",
+          "pagination",
+          "rows"
+        ]
+      },
       "JournalLineInput": {
         "type": "object",
         "properties": {
@@ -3715,6 +4381,82 @@
           "scopeType",
           "scopeId",
           "effect"
+        ]
+      },
+      "RoleAssignmentScopeReplaceInput": {
+        "type": "object",
+        "properties": {
+          "scopeType": {
+            "type": "string",
+            "enum": [
+              "TENANT",
+              "GROUP",
+              "COUNTRY",
+              "LEGAL_ENTITY",
+              "OPERATING_UNIT"
+            ]
+          },
+          "scopeId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "effect": {
+            "type": "string",
+            "enum": [
+              "ALLOW",
+              "DENY"
+            ]
+          }
+        },
+        "required": [
+          "scopeType",
+          "scopeId",
+          "effect"
+        ]
+      },
+      "DataScopeItemInput": {
+        "type": "object",
+        "properties": {
+          "scopeType": {
+            "type": "string",
+            "enum": [
+              "TENANT",
+              "GROUP",
+              "COUNTRY",
+              "LEGAL_ENTITY",
+              "OPERATING_UNIT"
+            ]
+          },
+          "scopeId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "effect": {
+            "type": "string",
+            "enum": [
+              "ALLOW",
+              "DENY"
+            ]
+          }
+        },
+        "required": [
+          "scopeType",
+          "scopeId",
+          "effect"
+        ]
+      },
+      "DataScopeReplaceInput": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataScopeItemInput"
+            }
+          }
+        },
+        "required": [
+          "scopes"
         ]
       },
       "BookInput": {
@@ -4129,6 +4871,19 @@
         "required": [
           "ok"
         ]
+      },
+      "ConsolidationRunExecuteInput": {
+        "type": "object",
+        "properties": {
+          "rateType": {
+            "type": "string",
+            "enum": [
+              "SPOT",
+              "AVERAGE",
+              "CLOSING"
+            ]
+          }
+        }
       },
       "EliminationCreateInput": {
         "type": "object",
